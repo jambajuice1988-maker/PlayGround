@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#0b0908" />
+  <title>The Binding of Isaac 3D — The Cellar Below</title>
+  <meta name="description" content="A hand-built 3D twin-stick roguelike inspired by The Binding of Isaac. Descend three floors, cry at monsters, collect strange relics." />
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.min.js" } }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <div id="scene-wrap">
+      <canvas id="game-canvas" aria-label="3D dungeon game"></canvas>
+      <div id="vignette"></div>
+      <div id="grain"></div>
+      <div id="hurt-flash"></div>
+      <div id="white-flash"></div>
+    </div>
+
+    <div id="hud" class="hidden">
+      <div class="hud-left">
+        <div id="hearts" class="hearts" aria-label="Health"></div>
+        <div class="pips">
+          <div class="pip coin-pip" title="Coins"><span class="coin-icon"></span><b id="coin-count">0</b></div>
+          <div class="pip bomb-pip" title="Bombs"><span class="bomb-icon"></span><b id="bomb-count">1</b></div>
+        </div>
+      </div>
+
+      <div class="hud-center">
+        <div id="floor-label" class="floor-label">THE CELLAR <span>I</span></div>
+        <div id="boss-bar" class="boss-bar hidden">
+          <div class="boss-name" id="boss-name">THE MAW</div>
+          <div class="boss-track"><div id="boss-fill"></div></div>
+        </div>
+      </div>
+
+      <div class="hud-right">
+        <div class="map-frame">
+          <canvas id="minimap" width="232" height="172" aria-label="Dungeon map"></canvas>
+        </div>
+        <button id="pause-btn" class="icon-btn" aria-label="Pause">II</button>
+      </div>
+
+      <div id="room-banner" class="room-banner">
+        <div class="rb-rule"></div>
+        <div id="room-banner-name">THE CELLAR</div>
+        <div id="room-banner-sub">ROOM 01</div>
+        <div class="rb-rule"></div>
+      </div>
+
+      <div id="item-toast" class="item-toast">
+        <span class="toast-kicker">RELIC ACQUIRED</span>
+        <span id="item-toast-name">TEAR RING</span>
+        <span id="item-toast-desc">+1.0 TEAR DAMAGE</span>
+      </div>
+
+      <div id="hint" class="hint">
+        <span><kbd>WASD</kbd> MOVE</span><i>·</i>
+        <span><kbd>MOUSE</kbd> AIM</span><i>·</i>
+        <span><kbd>HOLD LMB</kbd> CRY</span><i>·</i>
+        <span><kbd>E</kbd> BOMB</span>
+      </div>
+
+      <div id="room-status" class="room-status">DOORS SEALED</div>
+    </div>
+
+    <div id="crosshair" class="hidden"><span></span></div>
+
+    <div id="touch-ui" class="hidden">
+      <div id="move-stick" class="stick-zone" aria-label="Move joystick">
+        <div class="stick-ring"><div class="stick-knob"></div></div>
+      </div>
+      <div id="aim-stick" class="stick-zone" aria-label="Aim joystick">
+        <div class="stick-ring aim-ring"><div class="stick-knob aim-knob"></div></div>
+      </div>
+      <button id="bomb-btn" class="touch-btn" aria-label="Drop bomb"><span class="bomb-icon"></span><small>E</small></button>
+      <button id="pause-touch" class="touch-btn small" aria-label="Pause">II</button>
+    </div>
+
+    <div id="title-screen" class="overlay title-screen">
+      <div class="title-atmos"></div>
+      <div class="title-content">
+        <div class="title-kicker">A 3D ROGUELIKE DESCENT</div>
+        <h1 class="game-logo">
+          <span class="logo-small">THE BINDING OF</span>
+          <span class="logo-big">ISAAC</span>
+          <span class="logo-3d">3D</span>
+        </h1>
+        <p class="title-tag">His mother heard a voice.<br><em>Something</em> answered from below.</p>
+        <button id="start-btn" class="primary-btn"><span>DESCEND</span><small>PRESS ENTER</small></button>
+        <div class="title-controls">
+          <div><kbd>WASD</kbd><span>Move</span></div>
+          <div><kbd>MOUSE</kbd><span>Aim</span></div>
+          <div><kbd>LMB</kbd><span>Cry</span></div>
+          <div><kbd>E</kbd><span>Bomb</span></div>
+        </div>
+        <button id="sound-toggle" class="sound-toggle" aria-label="Toggle sound">SOUND: ON</button>
+      </div>
+      <div class="title-footer">Best played with headphones · Fan-made tribute</div>
+    </div>
+
+    <div id="pause-screen" class="overlay pause-screen hidden">
+      <div class="pause-card">
+        <div class="pause-kicker">THE DUNGEON WAITS</div>
+        <h2>PAUSED</h2>
+        <div class="pause-stats" id="pause-stats"></div>
+        <button id="resume-btn" class="primary-btn small"><span>RESUME</span></button>
+        <button id="restart-btn" class="ghost-btn">ABANDON RUN</button>
+        <div class="settings-row">
+          <button id="sound-toggle-2" class="text-btn">SOUND: ON</button>
+          <button id="fullscreen-btn" class="text-btn">FULLSCREEN</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="end-screen" class="overlay end-screen hidden">
+      <div class="end-card">
+        <div class="end-kicker" id="end-kicker">THE DUNGEON CLAIMS YOU</div>
+        <h2 id="end-title">YOU DIED</h2>
+        <p id="end-message">The basement is hungry. It always was.</p>
+        <div class="end-stats" id="end-stats"></div>
+        <button id="again-btn" class="primary-btn"><span>TRY AGAIN</span><small>PRESS R</small></button>
+      </div>
+    </div>
+
+    <div id="fade" class="fade"></div>
+    <div id="loading" class="loading">
+      <div class="loading-mark">✦</div>
+      <div class="loading-text">DIGGING BELOW…</div>
+    </div>
+    <div id="rotate-hint" class="rotate-hint">Turn your phone sideways for a wider view</div>
+  </div>
+
+  <noscript>This game needs JavaScript and WebGL.</noscript>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
